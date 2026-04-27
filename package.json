@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "pretest:e2e": "playwright install chromium",
+    "test:e2e": "playwright test --project=chromium",
+    "pretest:e2e:headed": "playwright install chromium",
+    "test:e2e:headed": "playwright test --project=chromium --headed",
+    "pretest:e2e:trace": "playwright install chromium",
+    "test:e2e:trace": "playwright test --project=chromium --trace on"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "axios": "^1.7.4",
+    "concurrently": "^8.2.2",
+    "laravel-vite-plugin": "^1.0.5",
+    "vite": "^5.0.0"
+  }
+}

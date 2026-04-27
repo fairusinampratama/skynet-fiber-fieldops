@@ -1,0 +1,42 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: "Skynet Fiber FieldOps"
+      APP_ENV: local
+      APP_KEY: base64:nDkq482jljZuqhG/2b6knR8+OyxP3b5DuyoywBiw/tg=
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      APP_TIMEZONE: Asia/Jakarta
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: fieldops
+      DB_USERNAME: fieldops
+      DB_PASSWORD: fieldops
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      SESSION_DRIVER: database
+      FILESYSTEM_DISK: public
+      FILAMENT_FILESYSTEM_DISK: public
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fieldops
+      POSTGRES_USER: fieldops
+      POSTGRES_PASSWORD: fieldops
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres-data:
+  storage:
