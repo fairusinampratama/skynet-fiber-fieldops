@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\AssetType;
 use App\Enums\PortStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubmissionPort extends Model
 {
+    use HasFactory;
+
     public $timestamps = false;
 
     protected $fillable = ['submission_id', 'asset_type', 'port_number', 'status'];

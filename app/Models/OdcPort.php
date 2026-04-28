@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\PortStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OdcPort extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['odc_asset_id', 'port_number', 'status', 'source_submission_id', 'updated_by'];
 
     protected function casts(): array

@@ -6,17 +6,20 @@ use App\Enums\OdpCoreColor;
 use App\Enums\PortStatus;
 use App\Filament\Resources\OdpAssetResource\Pages;
 use App\Models\OdpAsset;
+use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class OdpAssetResource extends Resource
 {
     protected static ?string $model = OdpAsset::class;
-    protected static ?string $navigationIcon = 'heroicon-o-cpu-chip';
-    protected static ?string $navigationGroup = 'Official Assets';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-cpu-chip';
+    protected static string | UnitEnum | null $navigationGroup = 'Official Assets';
     protected static ?string $modelLabel = 'ODP Asset';
 
     public static function canViewAny(): bool
@@ -24,9 +27,9 @@ class OdpAssetResource extends Resource
         return auth()->user()->isAdmin();
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\Select::make('project_id')->relationship('project', 'name')->required()->searchable()->preload(),
             Forms\Components\Select::make('area_id')->relationship('area', 'name')->required()->searchable()->preload(),
             Forms\Components\Select::make('odc_asset_id')->relationship('odcAsset', 'box_id')->nullable()->searchable()->preload(),
@@ -53,15 +56,17 @@ class OdpAssetResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('project.name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('area.name')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('odcAsset.oltPonPort.oltAsset.code')->label('OLT')->placeholder('Unmapped')->searchable(),
+                Tables\Columns\TextColumn::make('odcAsset.oltPonPort.pon_number')->label('PON')->placeholder('-'),
                 Tables\Columns\TextColumn::make('odcAsset.box_id')->label('ODC')->searchable(),
                 Tables\Columns\TextColumn::make('box_id')->label('ODP')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('core_color')->badge(),
-                Tables\Columns\BadgeColumn::make('status'),
+                Tables\Columns\TextColumn::make('status')->badge(),
                 Tables\Columns\TextColumn::make('approved_at')->dateTime()->sortable(),
             ])
             ->filters([Tables\Filters\SelectFilter::make('project')->relationship('project', 'name')])
-            ->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->actions([Actions\EditAction::make()])
+            ->bulkActions([Actions\DeleteBulkAction::make()]);
     }
 
     public static function getPages(): array

@@ -6,9 +6,10 @@ RUN apt-get update \
         unzip \
         libicu-dev \
         libpq-dev \
+        libsqlite3-dev \
         libzip-dev \
         zip \
-    && docker-php-ext-install intl pdo pdo_pgsql zip \
+    && docker-php-ext-install intl pdo pdo_pgsql pdo_sqlite zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -26,4 +27,4 @@ RUN composer dump-autoload --optimize \
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache && php artisan view:clear && php artisan serve --host=0.0.0.0 --port=8000"]

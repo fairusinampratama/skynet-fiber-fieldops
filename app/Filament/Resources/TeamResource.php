@@ -5,25 +5,27 @@ namespace App\Filament\Resources;
 use App\Enums\UserRole;
 use App\Filament\Resources\TeamResource\Pages;
 use App\Models\Team;
+use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class TeamResource extends Resource
 {
     protected static ?string $model = Team::class;
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
 
     public static function canViewAny(): bool
     {
         return auth()->user()->isAdmin();
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\Select::make('project_id')->relationship('project', 'name')->required()->searchable()->preload(),
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\Select::make('leader_id')
@@ -43,8 +45,8 @@ class TeamResource extends Resource
                 Tables\Columns\TextColumn::make('leader.name')->placeholder('-'),
             ])
             ->filters([Tables\Filters\SelectFilter::make('project')->relationship('project', 'name')])
-            ->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->actions([Actions\EditAction::make()])
+            ->bulkActions([Actions\DeleteBulkAction::make()]);
     }
 
     public static function getPages(): array

@@ -20,7 +20,7 @@ function artisanTinker(statement) {
 async function login(page, user) {
   await page.goto('/admin/login');
   await page.getByLabel('Email address').fill(user.email);
-  await page.getByLabel('Password').fill(user.password);
+  await page.getByRole('textbox', { name: 'Password' }).fill(user.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/admin$/);
 }
@@ -36,20 +36,14 @@ async function openResource(page, name) {
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
 }
 
-async function chooseComboboxOption(page, index, option) {
-  await page.getByRole('combobox').nth(index).click();
-  await page.getByRole('option', { name: option }).click();
+async function chooseRelationshipOption(page, option) {
+  await page.getByRole('button', { name: 'Select an option' }).first().click();
+  await page.getByRole('textbox', { name: 'Search' }).fill(option);
+  await page.getByRole('option', { name: option, exact: true }).click();
 }
 
-async function uploadPhoto(page, selector, file, filename) {
-  const uploadFinished = page.waitForResponse((response) => (
-    response.url().includes('/livewire/update')
-    && response.request().method() === 'POST'
-    && response.status() === 200
-  ));
-
-  await page.locator(selector).setInputFiles(file);
-  await uploadFinished;
+async function uploadPhoto(page, index, file, filename) {
+  await page.locator('input[type="file"]').nth(index).setInputFiles(file);
   await expect(page.getByRole('alert').filter({ hasText: `${filename} Upload complete` })).toBeVisible();
 }
 
@@ -83,23 +77,23 @@ test('technician submission can be approved into official ODC and ODP assets', a
   await page.getByRole('link', { name: 'New submission' }).click();
   await expect(page.getByRole('heading', { name: 'Create Submission' })).toBeVisible();
 
-  await chooseComboboxOption(page, 0, 'Malang Deployment');
-  await chooseComboboxOption(page, 1, 'Team Alpha');
-  await chooseComboboxOption(page, 2, 'Malang Area 01');
+  await chooseRelationshipOption(page, 'Malang Deployment');
+  await chooseRelationshipOption(page, 'Team Alpha');
+  await chooseRelationshipOption(page, 'Malang Area 01');
 
   await page.getByLabel('ODC Box ID').fill(odcBoxId);
-  await uploadPhoto(page, '[id="data.odc_photo_path"] input[type="file"]', odcPhoto, 'odc-photo.png');
+  await uploadPhoto(page, 0, odcPhoto, 'odc-photo.png');
   await page.getByLabel('Odc latitude').fill('-7.96662000');
   await page.getByLabel('Odc longitude').fill('112.63263200');
 
   await page.getByLabel('ODP Box ID').fill(odpBoxId);
-  await uploadPhoto(page, '[id="data.odp_photo_path"] input[type="file"]', odpPhoto, 'odp-photo.png');
+  await uploadPhoto(page, 1, odpPhoto, 'odp-photo.png');
   await page.getByLabel('Odp latitude').fill('-7.96700000');
   await page.getByLabel('Odp longitude').fill('112.63300000');
   await page.getByLabel('Odp core color').selectOption({ label: 'Biru' });
 
   await fillPorts(page);
-  await page.getByLabel('Notes').fill('Created by Playwright E2E workflow test.');
+  await page.getByRole('textbox', { name: 'Notes', exact: true }).fill('Created by Playwright E2E workflow test.');
   await page.getByRole('button', { name: 'Create', exact: true }).click();
 
   await expect(page.getByText('Created')).toBeVisible();

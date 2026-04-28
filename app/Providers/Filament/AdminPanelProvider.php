@@ -3,9 +3,10 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Widgets\AssetStatsWidget;
+use App\Filament\Widgets\AutoAlertWidget;
+use App\Filament\Widgets\OltMonitoringWidget;
 use App\Filament\Widgets\PortAvailabilityWidget;
-use App\Filament\Widgets\ProjectProgressWidget;
-use App\Filament\Widgets\SubmissionStatsWidget;
+use App\Filament\Widgets\TopCriticalOdpWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -36,13 +37,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([Pages\Dashboard::class])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                SubmissionStatsWidget::class,
                 AssetStatsWidget::class,
+                AutoAlertWidget::class,
+                TopCriticalOdpWidget::class,
+                OltMonitoringWidget::class,
                 PortAvailabilityWidget::class,
-                ProjectProgressWidget::class,
-                Widgets\AccountWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

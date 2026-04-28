@@ -99,6 +99,34 @@ docker compose exec app php artisan migrate --seed
 # Access at http://localhost:8000/admin
 ```
 
+### Big Data Dashboard Testing
+
+Use the dedicated big-data command when you want to stress the operational dashboard and Filament resource tables. The normal `php artisan db:seed` stays small for everyday development.
+
+```bash
+# Build/start Docker and run normal migrations
+docker compose up -d --build
+docker compose exec app php artisan migrate
+
+# Repeatable local big-data run
+docker compose exec app php artisan fieldops:seed-big-data --profile=medium --reset --with-submissions
+
+# Additive staging-style run
+docker compose exec app php artisan fieldops:seed-big-data --profile=medium --with-submissions
+```
+
+The medium profile creates deterministic `BIG-*` data: 10 projects, 100 areas, 100 OLT assets, 800 PON ports, 2,000 ODC assets, 10,000 ODP assets, 16,000 ODC ports, 80,000 ODP ports, and 2,000 submissions when `--with-submissions` is used. It intentionally includes full/near-full ODPs, overloaded PONs, unmapped ODCs, and unlinked ODPs so dashboard alerts are populated.
+
+Suggested checks after seeding:
+
+```bash
+docker compose exec app php artisan fieldops:seed-big-data --profile=medium --reset --with-submissions
+docker compose exec app php artisan test tests/Feature/BigDataSeederTest.php
+npm run test:e2e
+```
+
+Then open `http://localhost:8000/admin` and verify that KPI cards, alert operasional, ODP kritis, PON bermasalah, and port distribution widgets are populated.
+
 ## 📁 Project Structure
 
 ```

@@ -9,10 +9,13 @@ use App\Enums\SubmissionStatus;
 use App\Filament\Resources\SubmissionResource\Pages;
 use App\Models\Submission;
 use App\Services\ApproveSubmissionService;
+use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,30 +24,30 @@ use Illuminate\Database\Eloquent\Model;
 class SubmissionResource extends Resource
 {
     protected static ?string $model = Submission::class;
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->visibleTo(auth()->user())->with(['project', 'technician', 'team', 'area']);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
-            Forms\Components\Section::make('Assignment')->schema([
+        return $schema->schema([
+            Section::make('Assignment')->schema([
                 Forms\Components\Select::make('project_id')->relationship('project', 'name')->required()->searchable()->preload(),
                 Forms\Components\Select::make('team_id')->relationship('team', 'name')->required()->searchable()->preload(),
                 Forms\Components\Select::make('area_id')->relationship('area', 'name')->required()->searchable()->preload(),
                 Forms\Components\DatePicker::make('work_date')->required()->default(now()),
                 Forms\Components\Hidden::make('technician_id')->default(fn () => auth()->id()),
             ])->columns(2),
-            Forms\Components\Section::make('ODC Data')->schema([
+            Section::make('ODC Data')->schema([
                 Forms\Components\TextInput::make('odc_box_id')->label('ODC Box ID')->required()->maxLength(255),
                 Forms\Components\FileUpload::make('odc_photo_path')->label('ODC Photo')->image()->directory('submissions/odc')->visibility('public'),
                 Forms\Components\TextInput::make('odc_latitude')->numeric()->required(),
                 Forms\Components\TextInput::make('odc_longitude')->numeric()->required(),
             ])->columns(2),
-            Forms\Components\Section::make('ODP Data')->schema([
+            Section::make('ODP Data')->schema([
                 Forms\Components\TextInput::make('odp_box_id')->label('ODP Box ID')->required()->maxLength(255),
                 Forms\Components\FileUpload::make('odp_photo_path')->label('ODP Photo')->image()->directory('submissions/odp')->visibility('public'),
                 Forms\Components\TextInput::make('odp_latitude')->numeric()->required(),
@@ -53,7 +56,7 @@ class SubmissionResource extends Resource
                     ->options(collect(OdpCoreColor::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                     ->required(),
             ])->columns(2),
-            Forms\Components\Section::make('Port Availability')->schema([
+            Section::make('Port Availability')->schema([
                 Forms\Components\Repeater::make('ports')
                     ->relationship()
                     ->schema([
@@ -80,7 +83,8 @@ class SubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('area.name')->sortable(),
                 Tables\Columns\TextColumn::make('odc_box_id')->label('ODC')->searchable(),
                 Tables\Columns\TextColumn::make('odp_box_id')->label('ODP')->searchable(),
-                Tables\Columns\BadgeColumn::make('status'),
+                Tables\Columns\TextColumn::make('odp_core_color')->badge(),
+                Tables\Columns\TextColumn::make('status')->badge(),
                 Tables\Columns\TextColumn::make('submitted_at')->dateTime()->sortable(),
             ])
             ->filters([
@@ -88,8 +92,8 @@ class SubmissionResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options(SubmissionStatus::class),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('submit')
+                Actions\EditAction::make(),
+                Actions\Action::make('submit')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
                     ->visible(fn (Submission $record) => ! auth()->user()->isAdmin() && in_array($record->status, [SubmissionStatus::Draft, SubmissionStatus::CorrectionNeeded], true))
@@ -100,7 +104,7 @@ class SubmissionResource extends Resource
                             'submitted_at' => now(),
                         ])->save();
                     }),
-                Tables\Actions\Action::make('approve')
+                Actions\Action::make('approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (Submission $record) => auth()->user()->isAdmin() && in_array($record->status, [SubmissionStatus::Submitted, SubmissionStatus::Resubmitted], true))
@@ -109,7 +113,7 @@ class SubmissionResource extends Resource
                         app(ApproveSubmissionService::class)->approve($record, auth()->user(), $data['review_notes'] ?? null);
                         Notification::make()->success()->title('Submission approved and assets updated.')->send();
                     }),
-                Tables\Actions\Action::make('requestCorrection')
+                Actions\Action::make('requestCorrection')
                     ->label('Request Correction')
                     ->icon('heroicon-o-pencil-square')
                     ->color('warning')
@@ -121,7 +125,7 @@ class SubmissionResource extends Resource
                         'reviewed_by' => auth()->id(),
                         'reviewed_at' => now(),
                     ])->save()),
-                Tables\Actions\Action::make('reject')
+                Actions\Action::make('reject')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn (Submission $record) => auth()->user()->isAdmin() && in_array($record->status, [SubmissionStatus::Submitted, SubmissionStatus::Resubmitted], true))

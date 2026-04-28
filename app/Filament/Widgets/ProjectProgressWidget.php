@@ -2,28 +2,24 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Project;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\DashboardMetricsService;
+use Filament\Widgets\Widget;
 
-class ProjectProgressWidget extends TableWidget
+class ProjectProgressWidget extends Widget
 {
-    protected static ?string $heading = 'Project Progress';
+    protected static ?int $sort = 6;
 
-    public function table(Table $table): Table
+    protected int | string | array $columnSpan = [
+        'xl' => 2,
+    ];
+
+    protected string $view = 'filament.widgets.project-area-progress';
+
+    protected function getViewData(): array
     {
-        return $table
-            ->query(Project::query()->withCount(['teams', 'areas']))
-            ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable(),
-                Tables\Columns\BadgeColumn::make('status'),
-                Tables\Columns\TextColumn::make('teams_count')->label('Teams'),
-                Tables\Columns\TextColumn::make('areas_count')->label('Areas'),
-                Tables\Columns\TextColumn::make('odc_assets_count')->counts('odcAssets')->label('ODC'),
-                Tables\Columns\TextColumn::make('odp_assets_count')->counts('odpAssets')->label('ODP'),
-            ]);
+        return [
+            'rows' => app(DashboardMetricsService::class)->areaProgress(),
+        ];
     }
 
     public static function canView(): bool

@@ -2,20 +2,24 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\SubmissionStatus;
-use App\Models\Submission;
-use Filament\Widgets\StatsOverviewWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Services\DashboardMetricsService;
+use Filament\Widgets\Widget;
 
-class SubmissionStatsWidget extends StatsOverviewWidget
+class SubmissionStatsWidget extends Widget
 {
-    protected function getStats(): array
+    protected static ?int $sort = 2;
+
+    protected int | string | array $columnSpan = [
+        'md' => 1,
+        'xl' => 1,
+    ];
+
+    protected string $view = 'filament.widgets.odp-utilization-summary';
+
+    protected function getViewData(): array
     {
         return [
-            Stat::make('Pending submissions', Submission::query()->whereIn('status', [SubmissionStatus::Submitted, SubmissionStatus::Resubmitted])->count())->color('info'),
-            Stat::make('Approved submissions', Submission::query()->where('status', SubmissionStatus::Approved)->count())->color('success'),
-            Stat::make('Rejected submissions', Submission::query()->where('status', SubmissionStatus::Rejected)->count())->color('danger'),
-            Stat::make('Correction needed', Submission::query()->where('status', SubmissionStatus::CorrectionNeeded)->count())->color('warning'),
+            'rows' => app(DashboardMetricsService::class)->utilizationSummary(),
         ];
     }
 

@@ -22,19 +22,21 @@ class ApproveSubmissionService
         return DB::transaction(function () use ($submission, $admin, $reviewNotes): Submission {
             $submission->load('ports');
 
-            $odcAsset = OdcAsset::query()->updateOrCreate(
-                ['project_id' => $submission->project_id, 'box_id' => $submission->odc_box_id],
-                [
-                    'area_id' => $submission->area_id,
-                    'photo_path' => $submission->odc_photo_path,
-                    'latitude' => $submission->odc_latitude,
-                    'longitude' => $submission->odc_longitude,
-                    'source_submission_id' => $submission->id,
-                    'approved_by' => $admin->id,
-                    'approved_at' => now(),
-                    'status' => 'active',
-                ],
-            );
+            $odcAsset = OdcAsset::query()->firstOrNew([
+                'project_id' => $submission->project_id,
+                'box_id' => $submission->odc_box_id,
+            ]);
+
+            $odcAsset->fill([
+                'area_id' => $submission->area_id,
+                'photo_path' => $submission->odc_photo_path,
+                'latitude' => $submission->odc_latitude,
+                'longitude' => $submission->odc_longitude,
+                'source_submission_id' => $submission->id,
+                'approved_by' => $admin->id,
+                'approved_at' => now(),
+                'status' => $odcAsset->exists && $odcAsset->olt_pon_port_id ? 'active' : 'unmapped',
+            ])->save();
 
             $odpAsset = OdpAsset::query()->updateOrCreate(
                 ['project_id' => $submission->project_id, 'box_id' => $submission->odp_box_id],

@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\OdpCoreColor;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OdpAsset extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['project_id', 'area_id', 'odc_asset_id', 'box_id', 'photo_path', 'latitude', 'longitude', 'core_color', 'source_submission_id', 'approved_by', 'approved_at', 'status'];
 
     protected function casts(): array

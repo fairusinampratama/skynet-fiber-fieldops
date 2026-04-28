@@ -3,21 +3,39 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\PortStatus;
-use App\Models\OdcPort;
-use App\Models\OdpPort;
-use Filament\Widgets\StatsOverviewWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Services\DashboardMetricsService;
+use Filament\Widgets\ChartWidget;
 
-class PortAvailabilityWidget extends StatsOverviewWidget
+class PortAvailabilityWidget extends ChartWidget
 {
-    protected function getStats(): array
+    protected static ?int $sort = 5;
+
+    protected int | string | array $columnSpan = [
+        'md' => 1,
+        'xl' => 1,
+    ];
+
+    protected ?string $heading = 'Distribusi Status Port ODP';
+
+    protected function getData(): array
     {
+        $distribution = app(DashboardMetricsService::class)->portStatusDistribution();
+
         return [
-            Stat::make('Available ODC ports', OdcPort::query()->where('status', PortStatus::Available)->count())->color('success'),
-            Stat::make('Used ODC ports', OdcPort::query()->where('status', PortStatus::Used)->count())->color('info'),
-            Stat::make('Available ODP ports', OdpPort::query()->where('status', PortStatus::Available)->count())->color('success'),
-            Stat::make('Used ODP ports', OdpPort::query()->where('status', PortStatus::Used)->count())->color('info'),
+            'datasets' => [
+                [
+                    'label' => 'Port',
+                    'data' => array_values($distribution),
+                    'backgroundColor' => ['#22c55e', '#38bdf8', '#f59e0b', '#ef4444', '#94a3b8'],
+                ],
+            ],
+            'labels' => collect(PortStatus::cases())->map(fn (PortStatus $status) => $status->getLabel())->all(),
         ];
+    }
+
+    protected function getType(): string
+    {
+        return 'doughnut';
     }
 
     public static function canView(): bool
