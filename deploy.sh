@@ -7,6 +7,12 @@ set -e
 
 echo "🚀 Starting Skynet Fiber FieldOps deployment..."
 
+# 0. Fix permissions for www-data
+echo "🔐 Fixing directory permissions..."
+mkdir -p /app/storage/logs /app/storage/framework/views /app/storage/framework/cache /app/storage/framework/sessions /app/bootstrap/cache
+chown -R www-data:www-data /app/storage /app/bootstrap/cache
+chmod -R 775 /app/storage /app/bootstrap/cache
+
 # 1. Run migrations
 echo "📦 Running database migrations..."
 php artisan migrate --force --isolated
