@@ -1,0 +1,47 @@
+# Nixpacks Configuration for Skynet Fiber FieldOps
+# Based on successful setup from skynet-ebilling
+
+[phases.setup]
+aptPkgs = [
+    "nginx"
+]
+nixPkgs = [
+    "php83",
+    "php83Packages.composer",
+    "php83Extensions.pdo_pgsql",
+    "php83Extensions.bcmath",
+    "php83Extensions.sockets",
+    "php83Extensions.xml",
+    "php83Extensions.mbstring",
+    "php83Extensions.ctype",
+    "php83Extensions.curl",
+    "php83Extensions.dom",
+    "php83Extensions.fileinfo",
+    "php83Extensions.filter",
+    "php83Extensions.tokenizer",
+    "php83Extensions.pcntl",
+    "php83Extensions.posix",
+    "php83Extensions.zip",
+    "php83Extensions.gd",
+    "php83Extensions.intl",
+    "php83Extensions.exif",
+    "nodejs_20",
+    "npm-9_x",
+    "iputils"
+]
+
+[phases.install]
+cmds = [
+    "composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=php",
+    "npm install"
+]
+
+[phases.build]
+cmds = [
+    "npm run build",
+    "mkdir -p /var/log/nginx /var/lib/nginx /tmp/nginx",
+    "cp docker/nginx.conf /etc/nginx/nginx.conf || cp docker/nginx.conf /etc/nginx/sites-available/default"
+]
+
+[start]
+cmd = "sh deploy.sh && php-fpm -y /usr/local/etc/php-fpm.conf & nginx -g 'daemon off;'"
