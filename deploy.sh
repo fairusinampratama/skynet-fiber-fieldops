@@ -7,11 +7,9 @@ set -e
 
 echo "🚀 Starting Skynet Fiber FieldOps deployment..."
 
-# 0. Fix permissions for www-data
-echo "🔐 Fixing directory permissions..."
+# 0. Fix directory structures
+echo "🔐 Fixing directory structures..."
 mkdir -p /app/storage/logs /app/storage/framework/views /app/storage/framework/cache /app/storage/framework/sessions /app/bootstrap/cache
-chown -R www-data:www-data /app/storage /app/bootstrap/cache
-chmod -R 775 /app/storage /app/bootstrap/cache
 
 # 1. Run migrations
 echo "📦 Running database migrations..."
@@ -29,3 +27,7 @@ php artisan view:cache
 php artisan filament:cache-components || true
 
 echo "✅ Deployment scripting complete. Passing control to Nixpacks..."
+
+# Final permission fix for any files created by artisan
+chown -R www-data:www-data /app/storage /app/bootstrap/cache
+chmod -R 775 /app/storage /app/bootstrap/cache
