@@ -371,20 +371,31 @@ class DashboardMetricsService
                 'type' => 'ODC Belum Mapping',
                 'object' => 'ODC belum terhubung ke OLT/PON',
                 'value' => $unmappedOdcs,
-                'action' => 'Assign OLT/PON',
+                'action' => 'Hubungkan OLT/PON',
                 'color' => 'info',
-                'url' => url('/admin/odc-assets'),
+                'url' => $this->assetFilterUrl('/admin/odc-assets', 'mapping_state', false),
             ],
             [
                 'level' => 'Belum Mapping',
                 'type' => 'ODP Belum Mapping',
                 'object' => 'ODP belum terhubung ke ODC',
                 'value' => $unlinkedOdps,
-                'action' => 'Assign ODC',
+                'action' => 'Hubungkan ODC',
                 'color' => 'info',
-                'url' => url('/admin/odp-assets'),
+                'url' => $this->assetFilterUrl('/admin/odp-assets', 'mapping_state', false),
             ],
         ])->filter(fn (array $alert): bool => $alert['value'] > 0)->values()->all();
+    }
+
+    private function assetFilterUrl(string $path, string $filter, bool|string $value): string
+    {
+        return url($path . '?' . http_build_query([
+            'filters' => [
+                $filter => [
+                    'value' => is_bool($value) ? (int) $value : $value,
+                ],
+            ],
+        ]));
     }
 
     private function odpCategoryFor(float $utilization): string

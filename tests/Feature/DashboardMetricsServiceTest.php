@@ -167,6 +167,19 @@ class DashboardMetricsServiceTest extends TestCase
         $this->assertTrue($service->criticalOdps()->isEmpty());
     }
 
+    public function test_unmapped_asset_alerts_link_to_filtered_asset_tables(): void
+    {
+        OdcAsset::factory()->create();
+        OdpAsset::factory()->create();
+
+        $alerts = collect(app(DashboardMetricsService::class)->alerts())->keyBy('type');
+
+        $this->assertStringContainsString('/admin/odc-assets?', $alerts['ODC Belum Mapping']['url']);
+        $this->assertStringContainsString('filters%5Bmapping_state%5D%5Bvalue%5D=0', $alerts['ODC Belum Mapping']['url']);
+        $this->assertStringContainsString('/admin/odp-assets?', $alerts['ODP Belum Mapping']['url']);
+        $this->assertStringContainsString('filters%5Bmapping_state%5D%5Bvalue%5D=0', $alerts['ODP Belum Mapping']['url']);
+    }
+
     public function test_top_critical_odps_are_ranked_by_utilization(): void
     {
         $this->odpWithPorts('ODP-WARN', [
