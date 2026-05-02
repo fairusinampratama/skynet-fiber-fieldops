@@ -13,7 +13,7 @@ mkdir -p /app/storage/logs /app/storage/framework/views /app/storage/framework/c
 
 # 1. Run migrations
 echo "📦 Running database migrations..."
-php artisan migrate --force --isolated
+php artisan migrate --force
 
 # 2. Create storage link (ignore if exists)
 echo "🔗 Creating storage symlink..."
