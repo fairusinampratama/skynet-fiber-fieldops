@@ -44,4 +44,4 @@ cmds = [
 ]
 
 [start]
-cmd = "sh deploy.sh && php-fpm -y /usr/local/etc/php-fpm.conf & nginx -g 'daemon off;'"
+cmd = "sh deploy.sh && php-fpm -y docker/php-fpm.conf & nginx -g 'daemon off;'"
