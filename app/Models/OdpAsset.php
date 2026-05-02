@@ -38,4 +38,9 @@ class OdpAsset extends Model
     {
         return $this->hasMany(OdpPort::class);
     }
+
+    public function sourceSubmission(): BelongsTo
+    {
+        return $this->belongsTo(Submission::class, 'source_submission_id');
+    }
 }

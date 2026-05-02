@@ -20,16 +20,18 @@ class PortAvailabilityWidget extends ChartWidget
     protected function getData(): array
     {
         $distribution = app(DashboardMetricsService::class)->portStatusDistribution();
+        $usedPorts = $distribution[PortStatus::Used->value] ?? 0;
+        $unusedPorts = array_sum($distribution) - $usedPorts;
 
         return [
             'datasets' => [
                 [
                     'label' => 'Port',
-                    'data' => array_values($distribution),
-                    'backgroundColor' => ['#22c55e', '#38bdf8', '#f59e0b', '#ef4444', '#94a3b8'],
+                    'data' => [$unusedPorts, $usedPorts],
+                    'backgroundColor' => ['#22c55e', '#38bdf8'],
                 ],
             ],
-            'labels' => collect(PortStatus::cases())->map(fn (PortStatus $status) => $status->getLabel())->all(),
+            'labels' => array_values(PortStatus::simpleOptions()),
         ];
     }
 

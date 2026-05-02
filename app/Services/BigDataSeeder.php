@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AssetType;
 use App\Enums\OdpCoreColor;
 use App\Enums\PortStatus;
 use App\Enums\SubmissionStatus;
@@ -13,6 +14,12 @@ use InvalidArgumentException;
 class BigDataSeeder
 {
     public const PREFIX = 'BIG';
+
+    private string $activeProfile = 'medium';
+
+    private string $scenario = 'balanced';
+
+    private int $seed = 1234;
 
     /** @var array<string, array<string, int>> */
     public const PROFILES = [
@@ -38,6 +45,70 @@ class BigDataSeeder
             'submissions_per_project' => 200,
             'technicians' => 100,
         ],
+        'demo' => [
+            'projects' => 4,
+            'areas_per_project' => 8,
+            'olts_per_project' => 4,
+            'pons_per_olt' => 8,
+            'odcs_per_project' => 120,
+            'odps_per_project' => 560,
+            'ports_per_asset' => 8,
+            'submissions_per_project' => 160,
+            'technicians' => 64,
+        ],
+    ];
+
+    /** @var array<int, array{name: string, code: string, center: array{float, float}, description: string}> */
+    private const DEMO_PROJECTS = [
+        ['name' => 'Malang Timur FTTH', 'code' => 'MLG-TMR', 'center' => [-7.966620, 112.632632], 'description' => 'Ekspansi FTTH area urban Malang Timur.'],
+        ['name' => 'Surabaya Barat Expansion', 'code' => 'SBY-BRT', 'center' => [-7.275610, 112.642643], 'description' => 'Perluasan kapasitas pelanggan Surabaya Barat.'],
+        ['name' => 'Sidoarjo Cluster Upgrade', 'code' => 'SDA-UPG', 'center' => [-7.447800, 112.718300], 'description' => 'Upgrade cluster ODP dan PON padat pelanggan.'],
+        ['name' => 'Gresik Industrial Link', 'code' => 'GSK-IND', 'center' => [-7.156650, 112.655500], 'description' => 'Backbone distribusi kawasan industri Gresik.'],
+    ];
+
+    /** @var array<int, string> */
+    private const DEMO_AREA_NAMES = [
+        'Lowokwaru',
+        'Blimbing',
+        'Klojen',
+        'Pakis',
+        'Waru',
+        'Buduran',
+        'Menganti',
+        'Driyorejo',
+        'Rungkut',
+        'Tandes',
+        'Sawahan',
+        'Kebomas',
+    ];
+
+    /** @var array<int, string> */
+    private const DEMO_TECHNICIAN_NAMES = [
+        'Andi Pratama',
+        'Budi Santoso',
+        'Citra Lestari',
+        'Dewi Anggraini',
+        'Eko Wibowo',
+        'Fajar Nugroho',
+        'Gita Permata',
+        'Hendra Wijaya',
+        'Intan Maharani',
+        'Joko Susilo',
+        'Kurniawan Saputra',
+        'Laras Putri',
+        'Maya Kartika',
+        'Nanda Firmansyah',
+        'Putri Amelia',
+        'Rizky Maulana',
+    ];
+
+    /** @var array<int, string> */
+    private const ASSIGNMENT_NOTES = [
+        'Validasi koordinat dan foto aset.',
+        'Survey ulang port kosong untuk aktivasi pelanggan.',
+        'Cek label box dan kondisi splitter.',
+        'Pastikan jalur distribusi sesuai mapping OLT/PON.',
+        'Lengkapi foto close-up dan tampak sekitar.',
     ];
 
     /** @return array<string, int> */
@@ -47,13 +118,24 @@ class BigDataSeeder
     }
 
     /** @return array<string, int> */
-    public function run(string $profile = 'medium', bool $reset = false, bool $withSubmissions = false, int $chunk = 1000, ?callable $progress = null): array
+    public function run(
+        string $profile = 'medium',
+        bool $reset = false,
+        bool $withSubmissions = false,
+        int $chunk = 1000,
+        string $scenario = 'balanced',
+        int $seed = 1234,
+        ?callable $progress = null,
+    ): array
     {
         $config = self::profile($profile);
         $chunk = max(1, $chunk);
+        $this->activeProfile = $profile;
+        $this->scenario = in_array($scenario, ['balanced', 'critical', 'clean'], true) ? $scenario : 'balanced';
+        $this->seed = $seed;
 
         if ($reset) {
-            $this->progress($progress, 'Resetting existing BIG data');
+            $this->progress($progress, 'Menghapus data BIG yang lama');
             $this->reset();
         }
 
@@ -61,28 +143,27 @@ class BigDataSeeder
 
         $now = now();
 
-        $this->progress($progress, 'Seeding users');
+        $this->progress($progress, 'Membuat data teknisi');
         $this->seedUsers($config, $now, $chunk);
 
-        $this->progress($progress, 'Seeding projects, areas, teams, OLTs, and PONs');
+        $this->progress($progress, 'Membuat proyek, area, OLT, dan PON');
         $this->seedProjects($config, $now, $chunk);
         $this->seedAreas($config, $now, $chunk);
-        $this->seedTeams($config, $now, $chunk);
         $this->seedOlts($config, $now, $chunk);
         $this->seedPonPorts($config, $now, $chunk);
 
-        $this->progress($progress, 'Seeding ODC and ODP hierarchy');
+        $this->progress($progress, 'Membuat hirarki ODC dan ODP');
         $this->seedOdcs($config, $now, $chunk);
         $this->seedOdps($config, $now, $chunk);
 
-        $this->progress($progress, 'Seeding ODC ports');
+        $this->progress($progress, 'Membuat port ODC');
         $this->seedOdcPorts($config, $now, $chunk);
 
-        $this->progress($progress, 'Seeding ODP ports');
+        $this->progress($progress, 'Membuat port ODP');
         $this->seedOdpPorts($config, $now, $chunk);
 
         if ($withSubmissions) {
-            $this->progress($progress, 'Seeding submissions');
+            $this->progress($progress, 'Membuat penugasan lapangan');
             $this->seedSubmissions($config, $now, $chunk);
         }
 
@@ -99,7 +180,7 @@ class BigDataSeeder
     public function reset(): void
     {
         DB::transaction(function (): void {
-            DB::table('projects')->where('code', 'like', self::PREFIX . '-P%')->delete();
+            DB::table('projects')->where('code', 'like', self::PREFIX.'-P%')->delete();
             DB::table('users')->where('email', 'like', 'big-tech-%@skynet.local')->delete();
         });
     }
@@ -107,7 +188,7 @@ class BigDataSeeder
     /** @return array<string, int> */
     public function counts(): array
     {
-        $projectIds = DB::table('projects')->where('code', 'like', self::PREFIX . '-P%')->pluck('id');
+        $projectIds = DB::table('projects')->where('code', 'like', self::PREFIX.'-P%')->pluck('id');
         $oltIds = DB::table('olt_assets')->whereIn('project_id', $projectIds)->pluck('id');
         $ponIds = DB::table('olt_pon_ports')->whereIn('olt_asset_id', $oltIds)->pluck('id');
         $odcIds = DB::table('odc_assets')->whereIn('project_id', $projectIds)->pluck('id');
@@ -117,7 +198,6 @@ class BigDataSeeder
         return [
             'projects' => $projectIds->count(),
             'areas' => DB::table('areas')->whereIn('project_id', $projectIds)->count(),
-            'teams' => DB::table('teams')->whereIn('project_id', $projectIds)->count(),
             'technicians' => DB::table('users')->where('email', 'like', 'big-tech-%@skynet.local')->count(),
             'olts' => $oltIds->count(),
             'pons' => $ponIds->count(),
@@ -139,8 +219,12 @@ class BigDataSeeder
         $rows = [];
 
         foreach (range(1, $config['technicians']) as $index) {
+            $name = $this->isDemo()
+                ? self::DEMO_TECHNICIAN_NAMES[($index - 1) % count(self::DEMO_TECHNICIAN_NAMES)].sprintf(' %02d', (int) ceil($index / count(self::DEMO_TECHNICIAN_NAMES)))
+                : sprintf('Teknisi Big Data %03d', $index);
+
             $rows[] = [
-                'name' => sprintf('Big Data Technician %03d', $index),
+                'name' => $name,
                 'email' => sprintf('big-tech-%03d@skynet.local', $index),
                 'email_verified_at' => $now,
                 'password' => $password,
@@ -163,10 +247,12 @@ class BigDataSeeder
 
         foreach (range(1, $config['projects']) as $projectIndex) {
             $projectCode = $this->projectCode($projectIndex);
+            $project = $this->demoProject($projectIndex);
+
             $rows[] = [
-                'name' => "Big Data Project {$projectCode}",
+                'name' => $this->isDemo() ? $project['name'] : "Proyek Big Data {$projectCode}",
                 'code' => $projectCode,
-                'description' => 'Synthetic medium-scale project for dashboard and resource testing.',
+                'description' => $this->isDemo() ? $project['description'] : 'Data sintetis untuk pengujian dashboard dan resource.',
                 'status' => 'active',
                 'start_date' => now()->subMonth()->toDateString(),
                 'target_date' => now()->addMonths(6)->toDateString(),
@@ -191,9 +277,9 @@ class BigDataSeeder
                 $areaCode = $this->areaCode($projectIndex, $areaIndex);
                 $rows[] = [
                     'project_id' => $projectId,
-                    'name' => "Big Area {$areaCode}",
+                    'name' => $this->isDemo() ? $this->demoAreaName($projectIndex, $areaIndex) : "Area Big {$areaCode}",
                     'code' => $areaCode,
-                    'description' => 'Synthetic service area.',
+                    'description' => $this->isDemo() ? 'Area layanan demo dengan pola utilisasi realistis.' : 'Area layanan sintetis.',
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -201,33 +287,6 @@ class BigDataSeeder
         }
 
         $this->insertIgnoreChunked('areas', $rows, $chunk);
-    }
-
-    /** @param array<string, int> $config */
-    private function seedTeams(array $config, mixed $now, int $chunk): void
-    {
-        $projects = $this->projectIdsByCode();
-        $technicians = $this->technicianIds();
-        $rows = [];
-        $teamCounter = 1;
-
-        foreach ($projects as $projectCode => $projectId) {
-            $projectIndex = $this->numberFromCode($projectCode);
-
-            foreach (range(1, $config['areas_per_project']) as $teamIndex) {
-                $rows[] = [
-                    'project_id' => $projectId,
-                    'leader_id' => $technicians[($teamCounter - 1) % count($technicians)] ?? null,
-                    'name' => sprintf('Big Team P%03d-%03d', $projectIndex, $teamIndex),
-                    'notes' => 'Synthetic team for big-data testing.',
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-                $teamCounter++;
-            }
-        }
-
-        $this->insertIgnoreChunked('teams', $rows, $chunk);
     }
 
     /** @param array<string, int> $config */
@@ -247,13 +306,17 @@ class BigDataSeeder
                 $rows[] = [
                     'project_id' => $projectId,
                     'area_id' => $areas[$this->areaCode($projectIndex, $areaIndex)] ?? null,
-                    'name' => "Big OLT {$oltCode}",
+                    'name' => $this->isDemo()
+                        ? sprintf('OLT %s %02d', $this->demoAreaName($projectIndex, $areaIndex), $oltIndex)
+                        : "Big OLT {$oltCode}",
                     'code' => $oltCode,
-                    'location' => sprintf('Synthetic POP P%03d-%02d', $projectIndex, $oltIndex),
-                    'latitude' => $this->latitude($projectIndex, $oltIndex),
-                    'longitude' => $this->longitude($projectIndex, $oltIndex),
-                    'status' => 'active',
-                    'notes' => 'Generated by fieldops:seed-big-data.',
+                    'location' => $this->isDemo()
+                        ? sprintf('POP %s - Ring %02d', $this->demoAreaName($projectIndex, $areaIndex), $oltIndex)
+                        : sprintf('Synthetic POP P%03d-%02d', $projectIndex, $oltIndex),
+                    'latitude' => $this->latitude($projectIndex, $oltIndex, $areaIndex),
+                    'longitude' => $this->longitude($projectIndex, $oltIndex, $areaIndex),
+                    'status' => $this->isDemo() && $oltIndex === $config['olts_per_project'] && $projectIndex % 2 === 0 ? 'maintenance' : 'active',
+                    'notes' => $this->isDemo() ? 'Data demo untuk monitoring kapasitas jaringan.' : 'Generated by fieldops:seed-big-data.',
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -274,9 +337,9 @@ class BigDataSeeder
                 $rows[] = [
                     'olt_asset_id' => $oltId,
                     'pon_number' => $ponNumber,
-                    'label' => 'PON ' . $ponNumber,
+                    'label' => 'PON '.$ponNumber,
                     'capacity' => $this->ponCapacityFor($ponNumber),
-                    'status' => 'active',
+                    'status' => $this->isDemo() && $ponNumber === 8 ? 'maintenance' : 'active',
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -301,20 +364,20 @@ class BigDataSeeder
                 $areaIndex = (($odcIndex - 1) % $config['areas_per_project']) + 1;
                 $oltIndex = (($odcIndex - 1) % $config['olts_per_project']) + 1;
                 $ponNumber = (($odcIndex - 1) % $config['pons_per_olt']) + 1;
-                $isUnmapped = $odcIndex % 100 === 0 || $odcIndex === $config['odcs_per_project'];
+                $isUnmapped = $this->isOdcUnmapped($odcIndex, $config['odcs_per_project']);
 
                 $rows[] = [
                     'project_id' => $projectId,
                     'area_id' => $areas[$this->areaCode($projectIndex, $areaIndex)],
-                    'olt_pon_port_id' => $isUnmapped ? null : ($pons[$this->oltCode($projectIndex, $oltIndex) . ':' . $ponNumber] ?? null),
+                    'olt_pon_port_id' => $isUnmapped ? null : ($pons[$this->oltCode($projectIndex, $oltIndex).':'.$ponNumber] ?? null),
                     'box_id' => $this->odcCode($projectIndex, $odcIndex),
                     'photo_path' => 'assets/big-data/odc.png',
-                    'latitude' => $this->latitude($projectIndex, $odcIndex),
-                    'longitude' => $this->longitude($projectIndex, $odcIndex),
+                    'latitude' => $this->latitude($projectIndex, $odcIndex, $areaIndex),
+                    'longitude' => $this->longitude($projectIndex, $odcIndex, $areaIndex),
                     'source_submission_id' => null,
                     'approved_by' => null,
                     'approved_at' => $now,
-                    'status' => $isUnmapped ? 'unmapped' : 'active',
+                    'status' => $isUnmapped ? 'unmapped' : $this->assetStatusFor($odcIndex),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -339,7 +402,7 @@ class BigDataSeeder
             foreach (range(1, $config['odps_per_project']) as $odpIndex) {
                 $areaIndex = (($odpIndex - 1) % $config['areas_per_project']) + 1;
                 $odcIndex = (($odpIndex - 1) % $config['odcs_per_project']) + 1;
-                $isUnlinked = $odpIndex % 200 === 0 || $odpIndex === $config['odps_per_project'];
+                $isUnlinked = $this->isOdpUnlinked($odpIndex, $config['odps_per_project']);
 
                 $rows[] = [
                     'project_id' => $projectId,
@@ -347,13 +410,13 @@ class BigDataSeeder
                     'odc_asset_id' => $isUnlinked ? null : ($odcs[$this->odcCode($projectIndex, $odcIndex)] ?? null),
                     'box_id' => $this->odpCode($projectIndex, $odpIndex),
                     'photo_path' => 'assets/big-data/odp.png',
-                    'latitude' => $this->latitude($projectIndex, $odpIndex),
-                    'longitude' => $this->longitude($projectIndex, $odpIndex),
+                    'latitude' => $this->latitude($projectIndex, $odpIndex, $areaIndex),
+                    'longitude' => $this->longitude($projectIndex, $odpIndex, $areaIndex),
                     'core_color' => $coreColors[($odpIndex - 1) % count($coreColors)],
                     'source_submission_id' => null,
                     'approved_by' => null,
                     'approved_at' => $now,
-                    'status' => 'active',
+                    'status' => $this->assetStatusFor($odpIndex),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -369,7 +432,7 @@ class BigDataSeeder
         $rows = [];
 
         DB::table('odc_assets')
-            ->where('box_id', 'like', self::PREFIX . '-ODC-P%')
+            ->where('box_id', 'like', self::PREFIX.'-ODC-P%')
             ->orderBy('id')
             ->select('id')
             ->chunkById(500, function ($odcs) use (&$rows, $config, $now, $chunk): void {
@@ -378,7 +441,7 @@ class BigDataSeeder
                         $rows[] = [
                             'odc_asset_id' => $odc->id,
                             'port_number' => $portNumber,
-                            'status' => $portNumber <= 4 ? PortStatus::Used->value : PortStatus::Available->value,
+                            'status' => $this->odcPortStatusFor((int) $odc->id, $portNumber),
                             'source_submission_id' => null,
                             'updated_by' => null,
                             'created_at' => $now,
@@ -400,7 +463,7 @@ class BigDataSeeder
         $sequence = 1;
 
         DB::table('odp_assets')
-            ->where('box_id', 'like', self::PREFIX . '-ODP-P%')
+            ->where('box_id', 'like', self::PREFIX.'-ODP-P%')
             ->orderBy('box_id')
             ->select('id')
             ->chunk(500, function ($odps) use (&$rows, &$sequence, $config, $now, $chunk): void {
@@ -431,12 +494,11 @@ class BigDataSeeder
         $projects = $this->projectIdsByCode();
         $expectedSubmissions = count($projects) * $config['submissions_per_project'];
 
-        if (DB::table('submissions')->whereIn('project_id', $projects)->where('odc_box_id', 'like', self::PREFIX . '-ODC-P%')->count() >= $expectedSubmissions) {
+        if (DB::table('submissions')->whereIn('project_id', $projects)->where('box_id', 'like', self::PREFIX.'-%')->count() >= $expectedSubmissions) {
             return;
         }
 
         $areas = $this->areaIdsByCode();
-        $teams = $this->teamIdsByName();
         $technicians = $this->technicianIds();
         $rows = [];
         $submissionCounter = 1;
@@ -448,27 +510,36 @@ class BigDataSeeder
                 $areaIndex = (($submissionIndex - 1) % $config['areas_per_project']) + 1;
                 $status = $this->submissionStatusFor($submissionCounter);
                 $reviewed = in_array($status, [SubmissionStatus::Approved, SubmissionStatus::Rejected, SubmissionStatus::CorrectionNeeded], true);
+                $assetType = $submissionCounter % 2 === 0 ? AssetType::Odp : AssetType::Odc;
+                $assetIndex = (($submissionIndex - 1) % ($assetType === AssetType::Odc ? $config['odcs_per_project'] : $config['odps_per_project'])) + 1;
+                $plannedLatitude = $this->latitude($projectIndex, $submissionIndex, $areaIndex);
+                $plannedLongitude = $this->longitude($projectIndex, $submissionIndex, $areaIndex);
+                $coordinateDrift = (($submissionCounter % 7) - 3) * 0.000012;
+                $fieldLatitude = $status === SubmissionStatus::Assigned ? null : number_format(((float) $plannedLatitude) + $coordinateDrift, 8, '.', '');
+                $fieldLongitude = $status === SubmissionStatus::Assigned ? null : number_format(((float) $plannedLongitude) - $coordinateDrift, 8, '.', '');
 
                 $rows[] = [
                     'project_id' => $projectId,
                     'technician_id' => $technicians[($submissionCounter - 1) % count($technicians)],
-                    'team_id' => $teams[sprintf('Big Team P%03d-%03d', $projectIndex, $areaIndex)],
                     'area_id' => $areas[$this->areaCode($projectIndex, $areaIndex)],
                     'work_date' => now()->subDays($submissionIndex % 30)->toDateString(),
-                    'odc_box_id' => $this->odcCode($projectIndex, (($submissionIndex - 1) % $config['odcs_per_project']) + 1),
-                    'odc_photo_path' => 'submissions/big-data/odc.png',
-                    'odc_latitude' => $this->latitude($projectIndex, $submissionIndex),
-                    'odc_longitude' => $this->longitude($projectIndex, $submissionIndex),
-                    'odp_box_id' => $this->odpCode($projectIndex, (($submissionIndex - 1) % $config['odps_per_project']) + 1),
-                    'odp_photo_path' => 'submissions/big-data/odp.png',
-                    'odp_latitude' => $this->latitude($projectIndex, $submissionIndex + 1),
-                    'odp_longitude' => $this->longitude($projectIndex, $submissionIndex + 1),
-                    'odp_core_color' => OdpCoreColor::Biru->value,
-                    'notes' => 'Synthetic submission for resource pagination testing.',
+                    'asset_type' => $assetType->value,
+                    'box_id' => $assetType === AssetType::Odc ? $this->odcCode($projectIndex, $assetIndex) : $this->odpCode($projectIndex, $assetIndex),
+                    'photo_path' => $assetType === AssetType::Odc ? 'submissions/big-data/odc.png' : 'submissions/big-data/odp.png',
+                    'planned_latitude' => $plannedLatitude,
+                    'planned_longitude' => $plannedLongitude,
+                    'latitude' => $fieldLatitude,
+                    'longitude' => $fieldLongitude,
+                    'core_color' => $assetType === AssetType::Odp ? OdpCoreColor::Biru->value : null,
+                    'parent_odc_asset_id' => null,
+                    'notes' => $this->submissionNotesFor($submissionCounter, $status),
                     'status' => $status->value,
-                    'review_notes' => $reviewed ? 'Synthetic review note.' : null,
+                    'review_notes' => $reviewed ? $this->reviewNotesFor($status) : null,
                     'reviewed_by' => null,
-                    'submitted_at' => $status === SubmissionStatus::Draft ? null : $now,
+                    'assigned_by' => null,
+                    'assigned_at' => $now,
+                    'assignment_notes' => self::ASSIGNMENT_NOTES[($submissionCounter - 1) % count(self::ASSIGNMENT_NOTES)],
+                    'submitted_at' => $status === SubmissionStatus::Assigned ? null : $now,
                     'reviewed_at' => $reviewed ? $now : null,
                     'created_at' => $now,
                     'updated_at' => $now,
@@ -488,20 +559,18 @@ class BigDataSeeder
         $rows = [];
 
         DB::table('submissions')
-            ->where('odc_box_id', 'like', self::PREFIX . '-ODC-P%')
+            ->where('box_id', 'like', self::PREFIX.'-%')
             ->orderBy('id')
-            ->select('id')
-            ->chunkById(500, function ($submissions) use (&$rows, $config, $now, $chunk): void {
+            ->select('id', 'asset_type')
+            ->chunkById(500, function ($submissions) use (&$rows, $config, $chunk): void {
                 foreach ($submissions as $submission) {
-                    foreach (['odc', 'odp'] as $assetType) {
-                        foreach (range(1, $config['ports_per_asset']) as $portNumber) {
-                            $rows[] = [
-                                'submission_id' => $submission->id,
-                                'asset_type' => $assetType,
-                                'port_number' => $portNumber,
-                                'status' => $portNumber <= 4 ? PortStatus::Used->value : PortStatus::Available->value,
-                            ];
-                        }
+                    foreach (range(1, $config['ports_per_asset']) as $portNumber) {
+                        $rows[] = [
+                            'submission_id' => $submission->id,
+                            'asset_type' => $submission->asset_type,
+                            'port_number' => $portNumber,
+                            'status' => $this->submissionPortStatusFor((int) $submission->id, $portNumber),
+                        ];
                     }
 
                     $this->flushIfNeeded('submission_ports', $rows, $chunk);
@@ -514,18 +583,46 @@ class BigDataSeeder
     /** @return array<int, string> */
     private function odpStatusesFor(int $sequence, int $portsPerAsset): array
     {
-        $slot = $sequence % 20;
+        if ($this->scenario === 'clean') {
+            $slot = $sequence % 10;
 
-        if ($slot === 0) {
-            return $this->portStatuses($portsPerAsset, used: 2, reserved: 0, available: 2, broken: 2, unknown: 2);
+            return $slot <= 7
+                ? $this->portStatuses($portsPerAsset, used: 2, reserved: 0, available: 6)
+                : $this->portStatuses($portsPerAsset, used: 5, reserved: 1, available: 2);
         }
 
-        if ($slot <= 12) {
+        if ($this->scenario === 'critical') {
+            $slot = $sequence % 20;
+
+            if ($slot <= 5) {
+                return $this->portStatuses($portsPerAsset, used: 7, reserved: 1, available: 0);
+            }
+
+            if ($slot <= 12) {
+                return $this->portStatuses($portsPerAsset, used: 6, reserved: 1, available: 1);
+            }
+
+            return $slot === 19
+                ? $this->portStatuses($portsPerAsset, used: 2, reserved: 0, available: 2, broken: 2, unknown: 2)
+                : $this->portStatuses($portsPerAsset, used: 3, reserved: 0, available: 5);
+        }
+
+        $slot = $sequence % 100;
+
+        if ($slot < 55) {
             return $this->portStatuses($portsPerAsset, used: 2, reserved: 0, available: 6);
         }
 
-        if ($slot <= 16) {
+        if ($slot < 80) {
+            return $this->portStatuses($portsPerAsset, used: 5, reserved: 1, available: 2);
+        }
+
+        if ($slot < 92) {
             return $this->portStatuses($portsPerAsset, used: 6, reserved: 1, available: 1);
+        }
+
+        if ($slot < 97) {
+            return $this->portStatuses($portsPerAsset, used: 2, reserved: 0, available: 2, broken: 2, unknown: 2);
         }
 
         return $this->portStatuses($portsPerAsset, used: 7, reserved: 1, available: 0);
@@ -549,23 +646,140 @@ class BigDataSeeder
 
     private function submissionStatusFor(int $sequence): SubmissionStatus
     {
-        return match ($sequence % 6) {
-            0 => SubmissionStatus::Approved,
-            1 => SubmissionStatus::Draft,
-            2 => SubmissionStatus::Submitted,
-            3 => SubmissionStatus::CorrectionNeeded,
-            4 => SubmissionStatus::Resubmitted,
+        $slot = $sequence % 100;
+
+        if ($this->scenario === 'clean') {
+            return match (true) {
+                $slot < 45 => SubmissionStatus::Approved,
+                $slot < 70 => SubmissionStatus::Submitted,
+                $slot < 90 => SubmissionStatus::Assigned,
+                default => SubmissionStatus::Resubmitted,
+            };
+        }
+
+        if ($this->scenario === 'critical') {
+            return match (true) {
+                $slot < 25 => SubmissionStatus::Assigned,
+                $slot < 45 => SubmissionStatus::Submitted,
+                $slot < 60 => SubmissionStatus::Approved,
+                $slot < 80 => SubmissionStatus::CorrectionNeeded,
+                $slot < 90 => SubmissionStatus::Resubmitted,
+                default => SubmissionStatus::Rejected,
+            };
+        }
+
+        return match (true) {
+            $slot < 35 => SubmissionStatus::Assigned,
+            $slot < 60 => SubmissionStatus::Submitted,
+            $slot < 80 => SubmissionStatus::Approved,
+            $slot < 90 => SubmissionStatus::CorrectionNeeded,
+            $slot < 95 => SubmissionStatus::Resubmitted,
             default => SubmissionStatus::Rejected,
         };
     }
 
     private function ponCapacityFor(int $ponNumber): int
     {
+        if ($this->isDemo()) {
+            return match ($ponNumber) {
+                1, 2 => 64,
+                3, 4 => 96,
+                5, 6 => 128,
+                default => 192,
+            };
+        }
+
         return match ($ponNumber) {
             1 => 128,
             2 => 230,
             3 => 280,
             default => 512,
+        };
+    }
+
+    private function isOdcUnmapped(int $odcIndex, int $odcsPerProject): bool
+    {
+        if ($this->scenario === 'clean') {
+            return $odcIndex % 240 === 0 || $odcIndex === $odcsPerProject;
+        }
+
+        if ($this->scenario === 'critical') {
+            return $odcIndex % 24 === 0 || $odcIndex === $odcsPerProject;
+        }
+
+        return $odcIndex % 60 === 0 || $odcIndex === $odcsPerProject;
+    }
+
+    private function isOdpUnlinked(int $odpIndex, int $odpsPerProject): bool
+    {
+        if ($this->scenario === 'clean') {
+            return $odpIndex % 320 === 0 || $odpIndex === $odpsPerProject;
+        }
+
+        if ($this->scenario === 'critical') {
+            return $odpIndex % 45 === 0 || $odpIndex === $odpsPerProject;
+        }
+
+        return $odpIndex % 140 === 0 || $odpIndex === $odpsPerProject;
+    }
+
+    private function assetStatusFor(int $sequence): string
+    {
+        if ($this->scenario === 'clean') {
+            return $sequence % 80 === 0 ? 'maintenance' : 'active';
+        }
+
+        if ($this->scenario === 'critical') {
+            return $sequence % 18 === 0 ? 'maintenance' : 'active';
+        }
+
+        return $sequence % 40 === 0 ? 'maintenance' : 'active';
+    }
+
+    private function odcPortStatusFor(int $odcId, int $portNumber): string
+    {
+        if ($this->scenario === 'critical' && ($odcId + $portNumber) % 11 === 0) {
+            return PortStatus::Broken->value;
+        }
+
+        return $portNumber <= 4 ? PortStatus::Used->value : PortStatus::Available->value;
+    }
+
+    private function submissionPortStatusFor(int $submissionId, int $portNumber): string
+    {
+        if (($submissionId + $portNumber) % 17 === 0) {
+            return PortStatus::Unknown->value;
+        }
+
+        if (($submissionId + $portNumber) % 13 === 0) {
+            return PortStatus::Reserved->value;
+        }
+
+        return $portNumber <= 4 ? PortStatus::Used->value : PortStatus::Available->value;
+    }
+
+    private function submissionNotesFor(int $sequence, SubmissionStatus $status): ?string
+    {
+        if ($status === SubmissionStatus::Assigned) {
+            return null;
+        }
+
+        return match ($sequence % 5) {
+            0 => 'Foto dan koordinat sudah divalidasi di lokasi.',
+            1 => 'Port kosong sudah dicek dan diberi label ulang.',
+            2 => 'Kondisi box baik, perlu monitoring kapasitas.',
+            3 => 'Terdapat perbedaan label, sudah dicatat untuk review.',
+            default => 'Data lapangan sudah dilengkapi oleh teknisi.',
+        };
+    }
+
+    private function reviewNotesFor(SubmissionStatus $status): string
+    {
+        return match ($status) {
+            SubmissionStatus::Approved => 'Data sudah sesuai.',
+            SubmissionStatus::CorrectionNeeded => 'Foto kurang jelas, mohon unggah ulang.',
+            SubmissionStatus::Rejected => 'Duplikasi dengan aset existing.',
+            default => 'Menunggu tindak lanjut.',
         };
     }
 
@@ -599,19 +813,19 @@ class BigDataSeeder
     /** @return array<string, int> */
     private function projectIdsByCode(): array
     {
-        return DB::table('projects')->where('code', 'like', self::PREFIX . '-P%')->orderBy('code')->pluck('id', 'code')->all();
+        return DB::table('projects')->where('code', 'like', self::PREFIX.'-P%')->orderBy('code')->pluck('id', 'code')->all();
     }
 
     /** @return array<string, int> */
     private function areaIdsByCode(): array
     {
-        return DB::table('areas')->where('code', 'like', self::PREFIX . '-A-P%')->pluck('id', 'code')->all();
+        return DB::table('areas')->where('code', 'like', self::PREFIX.'-A-P%')->pluck('id', 'code')->all();
     }
 
     /** @return array<string, int> */
     private function oltIdsByCode(): array
     {
-        return DB::table('olt_assets')->where('code', 'like', self::PREFIX . '-OLT-P%')->pluck('id', 'code')->all();
+        return DB::table('olt_assets')->where('code', 'like', self::PREFIX.'-OLT-P%')->pluck('id', 'code')->all();
     }
 
     /** @return array<string, int> */
@@ -619,23 +833,17 @@ class BigDataSeeder
     {
         return DB::table('olt_pon_ports')
             ->join('olt_assets', 'olt_assets.id', '=', 'olt_pon_ports.olt_asset_id')
-            ->where('olt_assets.code', 'like', self::PREFIX . '-OLT-P%')
+            ->where('olt_assets.code', 'like', self::PREFIX.'-OLT-P%')
             ->select('olt_assets.code', 'olt_pon_ports.pon_number', 'olt_pon_ports.id')
             ->get()
-            ->mapWithKeys(fn (object $row): array => [$row->code . ':' . $row->pon_number => $row->id])
+            ->mapWithKeys(fn (object $row): array => [$row->code.':'.$row->pon_number => $row->id])
             ->all();
     }
 
     /** @return array<string, int> */
     private function odcIdsByCode(): array
     {
-        return DB::table('odc_assets')->where('box_id', 'like', self::PREFIX . '-ODC-P%')->pluck('id', 'box_id')->all();
-    }
-
-    /** @return array<string, int> */
-    private function teamIdsByName(): array
-    {
-        return DB::table('teams')->where('name', 'like', 'Big Team P%')->pluck('id', 'name')->all();
+        return DB::table('odc_assets')->where('box_id', 'like', self::PREFIX.'-ODC-P%')->pluck('id', 'box_id')->all();
     }
 
     /** @return array<int, int> */
@@ -676,13 +884,47 @@ class BigDataSeeder
         return (int) ($matches[1] ?? 0);
     }
 
-    private function latitude(int $projectIndex, int $offset): string
+    private function latitude(int $projectIndex, int $offset, int $areaIndex = 1): string
     {
+        if ($this->isDemo()) {
+            [$baseLatitude] = $this->demoProject($projectIndex)['center'];
+            $areaOffset = (($areaIndex % 5) - 2) * 0.006;
+            $localOffset = (($offset % 37) - 18) * 0.00022;
+
+            return number_format($baseLatitude + $areaOffset + $localOffset + ($this->seed % 7) * 0.00001, 8, '.', '');
+        }
+
         return number_format(-7.90 - ($projectIndex * 0.01) - (($offset % 100) * 0.0001), 8, '.', '');
     }
 
-    private function longitude(int $projectIndex, int $offset): string
+    private function longitude(int $projectIndex, int $offset, int $areaIndex = 1): string
     {
+        if ($this->isDemo()) {
+            [, $baseLongitude] = $this->demoProject($projectIndex)['center'];
+            $areaOffset = (($areaIndex % 4) - 1.5) * 0.007;
+            $localOffset = (($offset % 41) - 20) * 0.00024;
+
+            return number_format($baseLongitude + $areaOffset + $localOffset + ($this->seed % 11) * 0.00001, 8, '.', '');
+        }
+
         return number_format(112.60 + ($projectIndex * 0.01) + (($offset % 100) * 0.0001), 8, '.', '');
+    }
+
+    private function isDemo(): bool
+    {
+        return $this->activeProfile === 'demo';
+    }
+
+    /** @return array{name: string, code: string, center: array{float, float}, description: string} */
+    private function demoProject(int $projectIndex): array
+    {
+        return self::DEMO_PROJECTS[($projectIndex - 1) % count(self::DEMO_PROJECTS)];
+    }
+
+    private function demoAreaName(int $projectIndex, int $areaIndex): string
+    {
+        $name = self::DEMO_AREA_NAMES[(($projectIndex - 1) * 3 + $areaIndex - 1) % count(self::DEMO_AREA_NAMES)];
+
+        return sprintf('%s Cluster %02d', $name, $areaIndex);
     }
 }

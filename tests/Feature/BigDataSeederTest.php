@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\BigDataSeeder;
+use App\Services\DashboardMetricsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -25,6 +26,63 @@ class BigDataSeederTest extends TestCase
         $this->assertSame(16000, $profile['projects'] * $profile['odcs_per_project'] * $profile['ports_per_asset']);
         $this->assertSame(80000, $profile['projects'] * $profile['odps_per_project'] * $profile['ports_per_asset']);
         $this->assertSame(2000, $profile['projects'] * $profile['submissions_per_project']);
+    }
+
+    public function test_demo_profile_creates_realistic_dashboard_story(): void
+    {
+        $this->artisan('fieldops:seed-big-data', [
+            '--profile' => 'demo',
+            '--scenario' => 'balanced',
+            '--seed' => 2026,
+            '--reset' => true,
+            '--with-submissions' => true,
+            '--chunk' => 500,
+        ])->assertSuccessful();
+
+        $seeder = app(BigDataSeeder::class);
+        $counts = $seeder->counts();
+        $profile = BigDataSeeder::profile('demo');
+
+        $this->assertSame($profile['projects'], $counts['projects']);
+        $this->assertSame($profile['projects'] * $profile['areas_per_project'], $counts['areas']);
+        $this->assertSame($profile['projects'] * $profile['olts_per_project'], $counts['olts']);
+        $this->assertSame($profile['projects'] * $profile['odcs_per_project'], $counts['odcs']);
+        $this->assertSame($profile['projects'] * $profile['odps_per_project'], $counts['odps']);
+        $this->assertSame($profile['projects'] * $profile['submissions_per_project'], $counts['submissions']);
+        $this->assertGreaterThan(0, $counts['unmapped_odcs']);
+        $this->assertGreaterThan(0, $counts['unlinked_odps']);
+
+        $this->assertDatabaseHas('projects', ['name' => 'Malang Timur FTTH']);
+        $this->assertDatabaseHas('projects', ['name' => 'Surabaya Barat Expansion']);
+        $this->assertDatabaseHas('users', ['name' => 'Andi Pratama 01']);
+
+        $summary = collect(app(DashboardMetricsService::class)->utilizationSummary())->pluck('count', 'category');
+        $alerts = collect(app(DashboardMetricsService::class)->alerts())->pluck('type');
+
+        $this->assertGreaterThan(0, $summary['Aman']);
+        $this->assertGreaterThan(0, $summary['Hampir Penuh']);
+        $this->assertGreaterThan(0, $summary['Penuh']);
+        $this->assertTrue($alerts->contains('ODC Belum Mapping'));
+        $this->assertTrue($alerts->contains('ODP Belum Mapping'));
+        $this->assertTrue($alerts->contains('ODP Kritis'));
+
+        foreach (['assigned', 'submitted', 'approved', 'correction_needed', 'resubmitted', 'rejected'] as $status) {
+            $this->assertGreaterThan(
+                0,
+                DB::table('submissions')->where('status', $status)->where('box_id', 'like', 'BIG-%')->count(),
+                "Expected demo submissions with status [{$status}].",
+            );
+        }
+
+        $this->artisan('fieldops:seed-big-data', [
+            '--profile' => 'demo',
+            '--scenario' => 'balanced',
+            '--seed' => 2026,
+            '--with-submissions' => true,
+            '--chunk' => 500,
+        ])->assertSuccessful();
+
+        $this->assertSame($counts, $seeder->counts());
     }
 
     public function test_big_data_command_creates_repeatable_hierarchy_and_submissions(): void
@@ -49,7 +107,7 @@ class BigDataSeederTest extends TestCase
         $this->assertSame($counts['odcs'] * $profile['ports_per_asset'], $counts['odc_ports']);
         $this->assertSame($counts['odps'] * $profile['ports_per_asset'], $counts['odp_ports']);
         $this->assertSame($profile['projects'] * $profile['submissions_per_project'], $counts['submissions']);
-        $this->assertSame($counts['submissions'] * $profile['ports_per_asset'] * 2, $counts['submission_ports']);
+        $this->assertSame($counts['submissions'] * $profile['ports_per_asset'], $counts['submission_ports']);
         $this->assertGreaterThan(0, $counts['unmapped_odcs']);
         $this->assertGreaterThan(0, $counts['unlinked_odps']);
 
@@ -93,7 +151,7 @@ class BigDataSeederTest extends TestCase
     {
         $this->artisan('fieldops:seed-big-data', ['--profile' => 'tiny', '--reset' => true])->assertSuccessful();
 
-        $service = app(\App\Services\DashboardMetricsService::class);
+        $service = app(DashboardMetricsService::class);
         $summary = collect($service->utilizationSummary())->pluck('count', 'category');
         $alerts = collect($service->alerts())->pluck('type');
 

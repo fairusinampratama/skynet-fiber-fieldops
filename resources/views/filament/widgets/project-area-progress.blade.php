@@ -1,12 +1,12 @@
 <x-filament-widgets::widget>
     @include('filament.widgets._table-styles')
 
-    <x-filament::section heading="Project / Area Progress">
+    <x-filament::section heading="Progress Proyek / Area">
         <div class="fieldops-table-wrap">
             <table class="fieldops-table">
                 <thead>
                     <tr>
-                        <th>Project</th>
+                        <th>Proyek</th>
                         <th>Area</th>
                         <th>ODP</th>
                         <th>Kapasitas</th>

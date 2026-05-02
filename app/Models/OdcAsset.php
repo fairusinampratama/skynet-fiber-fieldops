@@ -42,4 +42,9 @@ class OdcAsset extends Model
     {
         return $this->hasMany(OdcPort::class);
     }
+
+    public function sourceSubmission(): BelongsTo
+    {
+        return $this->belongsTo(Submission::class, 'source_submission_id');
+    }
 }

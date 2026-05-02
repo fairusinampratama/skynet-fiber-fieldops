@@ -1,0 +1,173 @@
+[x-cloak] {
+    display: none !important;
+}
+
+.fieldops-coordinate-map {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.fieldops-map-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fieldops-map-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(17 24 39);
+}
+
+.fieldops-map-description {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(75 85 99);
+}
+
+.fieldops-map-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fieldops-map-button {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    background: white;
+    color: rgb(17 24 39);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    padding: 0.45rem 0.75rem;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.fieldops-map-button:hover {
+    background: rgb(249 250 251);
+}
+
+.fieldops-map-button-primary {
+    background: rgb(37 99 235);
+    border-color: rgb(37 99 235);
+    color: white;
+}
+
+.fieldops-map-button-primary:hover {
+    background: rgb(29 78 216);
+    border-color: rgb(29 78 216);
+}
+
+.fieldops-map-shell {
+    background: rgb(249 250 251);
+    border: 1px solid rgb(229 231 235);
+    border-radius: 0.5rem;
+    min-height: 320px;
+    overflow: hidden;
+    position: relative;
+}
+
+.fieldops-map-canvas {
+    height: 22rem;
+    min-height: 320px;
+    width: 100%;
+}
+
+.fieldops-map-loading {
+    align-items: center;
+    background: rgb(249 250 251);
+    color: rgb(75 85 99);
+    display: flex;
+    font-size: 0.875rem;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+    z-index: 10;
+}
+
+.fieldops-map-target-marker {
+    background: transparent;
+    border: 0;
+}
+
+.fieldops-map-target-marker span {
+    background: rgb(22 163 74);
+    border: 2px solid white;
+    border-radius: 999px 999px 999px 0;
+    box-shadow: 0 8px 18px rgb(15 23 42 / 0.28);
+    display: block;
+    height: 24px;
+    transform: rotate(-45deg);
+    width: 24px;
+}
+
+.fieldops-map-target-marker span::after {
+    background: white;
+    border-radius: 999px;
+    content: "";
+    display: block;
+    height: 8px;
+    left: 6px;
+    position: relative;
+    top: 6px;
+    width: 8px;
+}
+
+.fieldops-map-coordinate-grid {
+    background: white;
+    border: 1px solid rgb(229 231 235);
+    border-radius: 0.5rem;
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.fieldops-map-coordinate-label {
+    margin: 0;
+    color: rgb(55 65 81);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.fieldops-map-coordinate-value {
+    margin: 0.25rem 0 0;
+    color: rgb(75 85 99);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.fieldops-map-status {
+    color: rgb(75 85 99);
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.fieldops-map-status-danger {
+    color: rgb(220 38 38);
+}
+
+.fieldops-map-status-warning,
+.fieldops-map-distance-warning {
+    color: rgb(180 83 9);
+}
+
+@media (min-width: 640px) {
+    .fieldops-map-coordinate-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 768px) {
+    .fieldops-map-header {
+        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .fieldops-map-canvas {
+        height: 26rem;
+    }
+}

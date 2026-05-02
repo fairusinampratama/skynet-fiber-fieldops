@@ -1,3 +1,5 @@
+name: skynet-fiber-fieldops
+
 services:
   app:
     build: .
@@ -10,6 +12,9 @@ services:
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
       APP_TIMEZONE: Asia/Jakarta
+      APP_LOCALE: id
+      APP_FALLBACK_LOCALE: id
+      APP_FAKER_LOCALE: id_ID
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

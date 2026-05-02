@@ -7,7 +7,6 @@ use App\Models\Area;
 use App\Models\OltAsset;
 use App\Models\OltPonPort;
 use App\Models\Project;
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,14 +15,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::query()->firstOrCreate(
+        $admin = User::query()->updateOrCreate(
             ['email' => 'admin@skynet.local'],
             ['name' => 'Skynet Admin', 'password' => Hash::make('password'), 'role' => UserRole::Admin, 'is_active' => true],
         );
 
-        $tech = User::query()->firstOrCreate(
+        $tech = User::query()->updateOrCreate(
             ['email' => 'tech@skynet.local'],
-            ['name' => 'Field Technician', 'password' => Hash::make('password'), 'role' => UserRole::Technician, 'is_active' => true],
+            ['name' => 'Teknisi Lapangan', 'password' => Hash::make('password'), 'role' => UserRole::Technician, 'is_active' => true],
         );
 
         $project = Project::query()->firstOrCreate(
@@ -31,7 +30,6 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Malang Deployment', 'description' => 'Initial deployment sample project.', 'status' => 'active'],
         );
 
-        Team::query()->firstOrCreate(['project_id' => $project->id, 'name' => 'Team Alpha'], ['leader_id' => $tech->id]);
         $area = Area::query()->firstOrCreate(['project_id' => $project->id, 'code' => 'MLG-01'], ['name' => 'Malang Area 01']);
 
         $olt = OltAsset::query()->firstOrCreate(

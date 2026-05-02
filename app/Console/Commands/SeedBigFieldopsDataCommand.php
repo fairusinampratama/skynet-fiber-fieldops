@@ -9,7 +9,9 @@ use InvalidArgumentException;
 class SeedBigFieldopsDataCommand extends Command
 {
     protected $signature = 'fieldops:seed-big-data
-        {--profile=medium : Data profile to seed: medium or tiny}
+        {--profile=medium : Data profile to seed: demo, medium, or tiny}
+        {--scenario=balanced : Demo scenario: balanced, critical, or clean}
+        {--seed=1234 : Deterministic seed used for demo naming and geo spread}
         {--reset : Remove existing BIG-* generated data before seeding}
         {--chunk=1000 : Bulk insert chunk size}
         {--with-submissions : Include synthetic submissions and submission ports}';
@@ -33,6 +35,8 @@ class SeedBigFieldopsDataCommand extends Command
                 reset: (bool) $this->option('reset'),
                 withSubmissions: (bool) $this->option('with-submissions'),
                 chunk: $chunk,
+                scenario: (string) $this->option('scenario'),
+                seed: (int) $this->option('seed'),
                 progress: fn (string $message) => $this->components->info($message),
             );
         } catch (InvalidArgumentException $exception) {

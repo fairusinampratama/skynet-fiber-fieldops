@@ -16,6 +16,9 @@ class AreaResource extends Resource
 {
     protected static ?string $model = Area::class;
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-map-pin';
+    protected static ?string $modelLabel = 'Area';
+    protected static ?string $pluralModelLabel = 'Area';
+    protected static ?string $navigationLabel = 'Area';
 
     public static function canViewAny(): bool
     {
@@ -25,10 +28,10 @@ class AreaResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\Select::make('project_id')->relationship('project', 'name')->required()->searchable()->preload(),
-            Forms\Components\TextInput::make('name')->required(),
-            Forms\Components\TextInput::make('code')->required(),
-            Forms\Components\Textarea::make('description')->columnSpanFull(),
+            Forms\Components\Select::make('project_id')->label('Proyek')->relationship('project', 'name')->required()->searchable()->preload(),
+            Forms\Components\TextInput::make('name')->label('Nama')->required(),
+            Forms\Components\TextInput::make('code')->label('Kode')->required(),
+            Forms\Components\Textarea::make('description')->label('Deskripsi')->columnSpanFull(),
         ])->columns(2);
     }
 
@@ -36,11 +39,11 @@ class AreaResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('project.name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('code')->searchable(),
+                Tables\Columns\TextColumn::make('project.name')->label('Proyek')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('code')->label('Kode')->searchable(),
             ])
-            ->filters([Tables\Filters\SelectFilter::make('project')->relationship('project', 'name')])
+            ->filters([Tables\Filters\SelectFilter::make('project')->label('Proyek')->relationship('project', 'name')])
             ->actions([Actions\EditAction::make()])
             ->bulkActions([Actions\DeleteBulkAction::make()]);
     }

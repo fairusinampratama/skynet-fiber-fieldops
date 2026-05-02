@@ -8,7 +8,6 @@ use App\Models\Area;
 use App\Models\Project;
 use App\Models\Submission;
 use App\Models\SubmissionPort;
-use App\Models\Team;
 use App\Models\User;
 
 trait CreatesFieldopsData
@@ -17,33 +16,31 @@ trait CreatesFieldopsData
     {
         $technician ??= User::factory()->technician()->create();
         $project = Project::factory()->create();
-        $team = Team::factory()->for($project)->for($technician, 'leader')->create();
         $area = Area::factory()->for($project)->create();
 
-        return compact('technician', 'project', 'team', 'area');
+        return compact('technician', 'project', 'area');
     }
 
     protected function submissionWithPorts(array $attributes = []): Submission
     {
         $bundle = $this->fieldopsBundle($attributes['technician'] ?? null);
+        $assetType = $attributes['asset_type'] ?? AssetType::Odc;
 
         unset($attributes['technician']);
 
-        $submission = Submission::factory()
+        $factory = Submission::factory()
             ->for($bundle['project'])
             ->for($bundle['technician'], 'technician')
-            ->for($bundle['team'])
-            ->for($bundle['area'])
-            ->create($attributes);
+            ->for($bundle['area']);
 
-        foreach ([AssetType::Odc, AssetType::Odp] as $assetType) {
-            foreach (range(1, 8) as $portNumber) {
-                SubmissionPort::factory()->for($submission)->create([
-                    'asset_type' => $assetType,
-                    'port_number' => $portNumber,
-                    'status' => $portNumber % 2 === 0 ? PortStatus::Used : PortStatus::Available,
-                ]);
-            }
+        $submission = $factory->create(['asset_type' => $assetType, ...$attributes]);
+
+        foreach (range(1, 8) as $portNumber) {
+            SubmissionPort::factory()->for($submission)->create([
+                'asset_type' => $submission->asset_type,
+                'port_number' => $portNumber,
+                'status' => $portNumber % 2 === 0 ? PortStatus::Used : PortStatus::Available,
+            ]);
         }
 
         return $submission;

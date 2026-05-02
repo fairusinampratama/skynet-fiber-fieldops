@@ -5,14 +5,14 @@ A comprehensive Laravel + Filament admin panel application for managing optical 
 ## ✨ Features
 
 - **Multi-Project Support**: Organize assets and submissions across multiple fiber deployment projects
-- **Technician Submissions**: Field teams submit ODC/ODP data with:
+- **Technician Submissions**: Field technicians submit ODC/ODP data with:
   - Geolocation coordinates (latitude/longitude)
   - High-resolution photos
   - Core color identification
   - Port availability and status tracking
 - **Admin Review Workflow**: Structured approval system for submissions before they become official records
 - **Official Asset Records**: Approved submissions automatically become official ODC/ODP asset records
-- **Team Performance Tracking**: Monitor technician submissions and team-based performance metrics
+- **Technician Performance Tracking**: Monitor technician submissions and assignment progress
 - **Comprehensive Dashboards**: Real-time analytics for asset statistics, port availability, project progress, and submission metrics
 - **Advanced Filtering**: Filter by project, area, asset type, and status
 - **CSV Exports**: Generate reports for analysis and record-keeping
@@ -108,19 +108,24 @@ Use the dedicated big-data command when you want to stress the operational dashb
 docker compose up -d --build
 docker compose exec app php artisan migrate
 
-# Repeatable local big-data run
+# Demo dashboard with realistic Indonesian project/area/technician data
+docker compose exec app php artisan fieldops:seed-big-data --profile=demo --scenario=balanced --seed=2026 --reset --with-submissions
+
+# Heavier pagination/performance run
 docker compose exec app php artisan fieldops:seed-big-data --profile=medium --reset --with-submissions
 
 # Additive staging-style run
 docker compose exec app php artisan fieldops:seed-big-data --profile=medium --with-submissions
 ```
 
-The medium profile creates deterministic `BIG-*` data: 10 projects, 100 areas, 100 OLT assets, 800 PON ports, 2,000 ODC assets, 10,000 ODP assets, 16,000 ODC ports, 80,000 ODP ports, and 2,000 submissions when `--with-submissions` is used. It intentionally includes full/near-full ODPs, overloaded PONs, unmapped ODCs, and unlinked ODPs so dashboard alerts are populated.
+The `demo` profile creates deterministic `BIG-*` data with realistic labels such as Malang Timur FTTH, Surabaya Barat Expansion, Indonesian technician names, clustered coordinates, mixed asset health, all major assignment statuses, ODP utilization bands, pressured PONs, unmapped ODCs, and unlinked ODPs. Use `--scenario=balanced`, `--scenario=critical`, or `--scenario=clean` to control how severe the dashboard story is. The `--seed` option keeps coordinates and naming repeatable.
+
+The `medium` profile remains available for scale testing: 10 projects, 100 areas, 100 OLT assets, 800 PON ports, 2,000 ODC assets, 10,000 ODP assets, 16,000 ODC ports, 80,000 ODP ports, and 2,000 submissions when `--with-submissions` is used.
 
 Suggested checks after seeding:
 
 ```bash
-docker compose exec app php artisan fieldops:seed-big-data --profile=medium --reset --with-submissions
+docker compose exec app php artisan fieldops:seed-big-data --profile=demo --scenario=balanced --reset --with-submissions
 docker compose exec app php artisan test tests/Feature/BigDataSeederTest.php
 npm run test:e2e
 ```
@@ -156,7 +161,6 @@ tests/
 - **OdcAsset / OdpAsset**: Official fiber cabinet/point records
 - **Submission**: Technician field submissions awaiting approval
 - **User**: System users with role-based permissions
-- **Team**: Technician teams for performance tracking
 
 ## 🧪 Testing
 

@@ -7,6 +7,7 @@ use Filament\Support\Contracts\HasLabel;
 
 enum SubmissionStatus: string implements HasColor, HasLabel
 {
+    case Assigned = 'assigned';
     case Draft = 'draft';
     case Submitted = 'submitted';
     case Approved = 'approved';
@@ -17,18 +18,20 @@ enum SubmissionStatus: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Draft => 'Draft',
-            self::Submitted => 'Submitted',
-            self::Approved => 'Approved',
-            self::Rejected => 'Rejected',
-            self::CorrectionNeeded => 'Correction Needed',
-            self::Resubmitted => 'Resubmitted',
+            self::Assigned => 'Ditugaskan',
+            self::Draft => 'Draf',
+            self::Submitted => 'Diajukan',
+            self::Approved => 'Disetujui',
+            self::Rejected => 'Ditolak',
+            self::CorrectionNeeded => 'Perlu Koreksi',
+            self::Resubmitted => 'Diajukan Ulang',
         };
     }
 
     public function getColor(): string
     {
         return match ($this) {
+            self::Assigned => 'gray',
             self::Draft => 'gray',
             self::Submitted => 'info',
             self::Approved => 'success',

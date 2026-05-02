@@ -17,6 +17,9 @@ class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-folder';
+    protected static ?string $modelLabel = 'Proyek';
+    protected static ?string $pluralModelLabel = 'Proyek';
+    protected static ?string $navigationLabel = 'Proyek';
 
     public static function canViewAny(): bool
     {
@@ -26,12 +29,12 @@ class ProjectResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('code')->required()->maxLength(50)->unique(ignoreRecord: true),
-            Forms\Components\Select::make('status')->options(['active' => 'Active', 'paused' => 'Paused', 'completed' => 'Completed'])->required(),
-            Forms\Components\DatePicker::make('start_date'),
-            Forms\Components\DatePicker::make('target_date'),
-            Forms\Components\Textarea::make('description')->columnSpanFull(),
+            Forms\Components\TextInput::make('name')->label('Nama')->required()->maxLength(255),
+            Forms\Components\TextInput::make('code')->label('Kode')->required()->maxLength(50)->unique(ignoreRecord: true),
+            Forms\Components\Select::make('status')->label('Status')->options(['active' => 'Aktif', 'paused' => 'Dijeda', 'completed' => 'Selesai'])->required(),
+            Forms\Components\DatePicker::make('start_date')->label('Tanggal Mulai'),
+            Forms\Components\DatePicker::make('target_date')->label('Target Selesai'),
+            Forms\Components\Textarea::make('description')->label('Deskripsi')->columnSpanFull(),
         ])->columns(2);
     }
 
@@ -39,12 +42,19 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('code')->searchable(),
-                Tables\Columns\TextColumn::make('status')->badge(),
-                Tables\Columns\TextColumn::make('teams_count')->counts('teams')->label('Teams'),
-                Tables\Columns\TextColumn::make('areas_count')->counts('areas')->label('Areas'),
-                Tables\Columns\TextColumn::make('target_date')->date()->sortable(),
+                Tables\Columns\TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('code')->label('Kode')->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'active' => 'Aktif',
+                        'paused' => 'Dijeda',
+                        'completed' => 'Selesai',
+                        default => $state ?? '-',
+                    })
+                    ->badge(),
+                Tables\Columns\TextColumn::make('areas_count')->counts('areas')->label('Area'),
+                Tables\Columns\TextColumn::make('target_date')->label('Target Selesai')->date()->sortable(),
             ])
             ->actions([Actions\EditAction::make()])
             ->bulkActions([Actions\BulkActionGroup::make([Actions\DeleteBulkAction::make()])]);

@@ -28,7 +28,7 @@ test('admin dashboard renders stats and core resources are reachable', async ({ 
   await page.mouse.wheel(0, 1200);
   await expect(page.getByRole('heading', { name: 'Distribusi Status Port ODP' })).toBeVisible();
 
-  for (const resource of ['Projects', 'Teams', 'Areas', 'Users', 'Submissions', 'OLT Assets', 'OLT PON Ports', 'ODC Assets', 'ODP Assets']) {
+  for (const resource of ['Proyek', 'Area', 'Pengguna', 'Penugasan Lapangan', 'Aset OLT', 'OLT PON Port', 'Aset ODC', 'Aset ODP']) {
     await page.getByRole('link', { name: resource }).click();
     await expect(page.getByRole('heading', { name: resource, exact: true })).toBeVisible();
   }

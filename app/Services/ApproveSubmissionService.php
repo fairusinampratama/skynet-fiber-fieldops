@@ -22,50 +22,52 @@ class ApproveSubmissionService
         return DB::transaction(function () use ($submission, $admin, $reviewNotes): Submission {
             $submission->load('ports');
 
-            $odcAsset = OdcAsset::query()->firstOrNew([
-                'project_id' => $submission->project_id,
-                'box_id' => $submission->odc_box_id,
-            ]);
+            if ($submission->asset_type === AssetType::Odc) {
+                $asset = OdcAsset::query()->firstOrNew([
+                    'project_id' => $submission->project_id,
+                    'box_id' => $submission->box_id,
+                ]);
 
-            $odcAsset->fill([
-                'area_id' => $submission->area_id,
-                'photo_path' => $submission->odc_photo_path,
-                'latitude' => $submission->odc_latitude,
-                'longitude' => $submission->odc_longitude,
-                'source_submission_id' => $submission->id,
-                'approved_by' => $admin->id,
-                'approved_at' => now(),
-                'status' => $odcAsset->exists && $odcAsset->olt_pon_port_id ? 'active' : 'unmapped',
-            ])->save();
-
-            $odpAsset = OdpAsset::query()->updateOrCreate(
-                ['project_id' => $submission->project_id, 'box_id' => $submission->odp_box_id],
-                [
+                $asset->fill([
                     'area_id' => $submission->area_id,
-                    'odc_asset_id' => $odcAsset->id,
-                    'photo_path' => $submission->odp_photo_path,
-                    'latitude' => $submission->odp_latitude,
-                    'longitude' => $submission->odp_longitude,
-                    'core_color' => $submission->odp_core_color,
+                    'photo_path' => $submission->photo_path,
+                    'latitude' => $submission->latitude,
+                    'longitude' => $submission->longitude,
                     'source_submission_id' => $submission->id,
                     'approved_by' => $admin->id,
                     'approved_at' => now(),
-                    'status' => 'active',
-                ],
-            );
+                    'status' => $asset->exists && $asset->olt_pon_port_id ? 'active' : 'unmapped',
+                ])->save();
 
-            foreach ($submission->ports->where('asset_type', AssetType::Odc) as $port) {
-                $odcAsset->ports()->updateOrCreate(
-                    ['port_number' => $port->port_number],
-                    ['status' => $port->status, 'source_submission_id' => $submission->id, 'updated_by' => $admin->id],
+                foreach ($submission->ports as $port) {
+                    $asset->ports()->updateOrCreate(
+                        ['port_number' => $port->port_number],
+                        ['status' => $port->status, 'source_submission_id' => $submission->id, 'updated_by' => $admin->id],
+                    );
+                }
+            } else {
+                $asset = OdpAsset::query()->updateOrCreate(
+                    ['project_id' => $submission->project_id, 'box_id' => $submission->box_id],
+                    [
+                        'area_id' => $submission->area_id,
+                        'odc_asset_id' => $submission->parent_odc_asset_id,
+                        'photo_path' => $submission->photo_path,
+                        'latitude' => $submission->latitude,
+                        'longitude' => $submission->longitude,
+                        'core_color' => $submission->core_color,
+                        'source_submission_id' => $submission->id,
+                        'approved_by' => $admin->id,
+                        'approved_at' => now(),
+                        'status' => 'active',
+                    ],
                 );
-            }
 
-            foreach ($submission->ports->where('asset_type', AssetType::Odp) as $port) {
-                $odpAsset->ports()->updateOrCreate(
-                    ['port_number' => $port->port_number],
-                    ['status' => $port->status, 'source_submission_id' => $submission->id, 'updated_by' => $admin->id],
-                );
+                foreach ($submission->ports as $port) {
+                    $asset->ports()->updateOrCreate(
+                        ['port_number' => $port->port_number],
+                        ['status' => $port->status, 'source_submission_id' => $submission->id, 'updated_by' => $admin->id],
+                    );
+                }
             }
 
             $submission->forceFill([

@@ -15,6 +15,8 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\HtmlString;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -34,6 +36,20 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->brandName('Skynet Fiber FieldOps')
             ->colors(['primary' => Color::Sky])
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): HtmlString => new HtmlString(<<<'HTML'
+                    <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" data-navigate-track />
+                    <link rel="stylesheet" href="/css/fieldops-coordinate-map.css" data-navigate-track />
+                    HTML),
+            )
+            ->renderHook(
+                PanelsRenderHook::SCRIPTS_BEFORE,
+                fn (): HtmlString => new HtmlString(<<<'HTML'
+                    <script src="/vendor/leaflet/leaflet.js" data-navigate-once></script>
+                    <script src="/js/fieldops-coordinate-map.js" data-navigate-once></script>
+                    HTML),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([Pages\Dashboard::class])

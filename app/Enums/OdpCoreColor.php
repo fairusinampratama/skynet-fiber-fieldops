@@ -24,7 +24,17 @@ enum OdpCoreColor: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::AbuAbu => 'Abu-abu',
-            default => ucfirst($this->value),
+            self::Biru => 'Biru',
+            self::Orange => 'Oranye',
+            self::Hijau => 'Hijau',
+            self::Coklat => 'Coklat',
+            self::Putih => 'Putih',
+            self::Merah => 'Merah',
+            self::Hitam => 'Hitam',
+            self::Kuning => 'Kuning',
+            self::Ungu => 'Ungu',
+            self::Pink => 'Pink',
+            self::Tosca => 'Tosca',
         };
     }
 

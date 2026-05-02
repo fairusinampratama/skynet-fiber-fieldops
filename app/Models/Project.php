@@ -17,11 +17,6 @@ class Project extends Model
         return ['start_date' => 'date', 'target_date' => 'date'];
     }
 
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
-
     public function areas(): HasMany
     {
         return $this->hasMany(Area::class);

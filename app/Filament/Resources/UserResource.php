@@ -19,7 +19,10 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-users';
-    protected static string | UnitEnum | null $navigationGroup = 'Administration';
+    protected static string | UnitEnum | null $navigationGroup = 'Administrasi';
+    protected static ?string $modelLabel = 'Pengguna';
+    protected static ?string $pluralModelLabel = 'Pengguna';
+    protected static ?string $navigationLabel = 'Pengguna';
 
     public static function canViewAny(): bool
     {
@@ -29,12 +32,13 @@ class UserResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\TextInput::make('name')->required(),
-            Forms\Components\TextInput::make('email')->email()->required()->unique(ignoreRecord: true),
-            Forms\Components\TextInput::make('phone')->tel(),
-            Forms\Components\Select::make('role')->options(collect(UserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))->required(),
-            Forms\Components\Toggle::make('is_active')->default(true),
+            Forms\Components\TextInput::make('name')->label('Nama')->required(),
+            Forms\Components\TextInput::make('email')->label('Email')->email()->required()->unique(ignoreRecord: true),
+            Forms\Components\TextInput::make('phone')->label('Telepon')->tel(),
+            Forms\Components\Select::make('role')->label('Peran')->options(collect(UserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))->required(),
+            Forms\Components\Toggle::make('is_active')->label('Aktif')->default(true),
             Forms\Components\TextInput::make('password')
+                ->label('Password')
                 ->password()
                 ->dehydrated(fn ($state) => filled($state))
                 ->dehydrateStateUsing(fn ($state) => Hash::make($state))
@@ -46,12 +50,12 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('email')->searchable(),
-                Tables\Columns\TextColumn::make('role')->badge(),
-                Tables\Columns\IconColumn::make('is_active')->boolean(),
+                Tables\Columns\TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
+                Tables\Columns\TextColumn::make('role')->label('Peran')->badge(),
+                Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
-            ->filters([Tables\Filters\SelectFilter::make('role')->options(collect(UserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))])
+            ->filters([Tables\Filters\SelectFilter::make('role')->label('Peran')->options(collect(UserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))])
             ->actions([Actions\EditAction::make()])
             ->bulkActions([Actions\DeleteBulkAction::make()]);
     }
