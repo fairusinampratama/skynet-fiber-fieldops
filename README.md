@@ -5,25 +5,26 @@ A comprehensive Laravel + Filament admin panel application for managing optical 
 ## ✨ Features
 
 - **Multi-Project Support**: Organize assets and submissions across multiple fiber deployment projects
-- **Technician Submissions**: Field technicians submit ODC/ODP data with:
-  - Geolocation coordinates (latitude/longitude)
-  - High-resolution photos
+- **OLT Hierarchy Management**: Track and manage Optical Line Terminals and PON port capacities
+- **Technician Assignments**: Field technicians submit ODC/ODP data directly with:
+  - Planned vs. Actual Geolocation coordinates mapped via interactive Leaflet UI
+  - High-resolution photo uploads with automated processing
   - Core color identification
   - Port availability and status tracking
 - **Admin Review Workflow**: Structured approval system for submissions before they become official records
 - **Official Asset Records**: Approved submissions automatically become official ODC/ODP asset records
-- **Technician Performance Tracking**: Monitor technician submissions and assignment progress
-- **Comprehensive Dashboards**: Real-time analytics for asset statistics, port availability, project progress, and submission metrics
+- **Technician Performance Tracking**: Monitor technician submissions and assignment progress directly
+- **Comprehensive Dashboards**: Real-time analytics for asset statistics, port availability, project progress, PON pressure, and submission metrics
 - **Advanced Filtering**: Filter by project, area, asset type, and status
 - **CSV Exports**: Generate reports for analysis and record-keeping
 - **Role-Based Access Control**: Admin and technician role separation with permission controls
 
 ## 🏗️ Tech Stack
 
-- **Backend**: Laravel 11 with PHP 8.3
-- **Admin Panel**: Filament 3
+- **Backend**: Laravel 13 with PHP 8.3
+- **Admin Panel**: Filament 5
 - **Database**: PostgreSQL
-- **Frontend**: Alpine.js, Tailwind CSS
+- **Frontend**: Alpine.js, Tailwind CSS, Leaflet.js
 - **Build Tool**: Vite
 - **Testing**: PHPUnit, Playwright (E2E)
 - **Containerization**: Docker & Docker Compose
@@ -158,9 +159,10 @@ tests/
 
 - **Project**: Top-level container for fiber deployment projects
 - **Area**: Geographical subdivisions within a project
+- **OltAsset / OltPonPort**: Optical Line Terminal and PON port capacity records
 - **OdcAsset / OdpAsset**: Official fiber cabinet/point records
-- **Submission**: Technician field submissions awaiting approval
-- **User**: System users with role-based permissions
+- **Submission**: Technician field single-asset assignments awaiting approval
+- **User**: System users with role-based permissions (Technicians, Admins)
 
 ## 🧪 Testing
 
@@ -195,4 +197,4 @@ This project is proprietary and confidential.
 
 ---
 
-**Built with Laravel 11 & Filament 3** | Designed for scalable field operations management
+**Built with Laravel 13 & Filament 5** | Designed for scalable field operations management
