@@ -29,7 +29,7 @@ class AuthAndAccessTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
-        foreach (['projects', 'areas', 'users', 'submissions', 'olt-assets', 'olt-pon-ports', 'odc-assets', 'odp-assets'] as $resource) {
+        foreach (['projects', 'areas', 'users', 'submissions', 'olt-assets', 'olt-pon-ports', 'odc-assets', 'odp-assets', 'asset-map'] as $resource) {
             $this->actingAs($admin)->get("/admin/{$resource}")->assertOk();
         }
     }
@@ -41,7 +41,7 @@ class AuthAndAccessTest extends TestCase
         $this->actingAs($technician)->get('/admin/submissions')->assertOk();
         $this->actingAs($technician)->get('/admin/submissions/create')->assertForbidden();
 
-        foreach (['projects', 'areas', 'users', 'olt-assets', 'olt-pon-ports', 'odc-assets', 'odp-assets'] as $resource) {
+        foreach (['projects', 'areas', 'users', 'olt-assets', 'olt-pon-ports', 'odc-assets', 'odp-assets', 'asset-map'] as $resource) {
             $this->actingAs($technician)->get("/admin/{$resource}")->assertForbidden();
         }
     }

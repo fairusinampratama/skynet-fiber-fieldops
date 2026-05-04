@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): HtmlString => new HtmlString(<<<'HTML'
                     <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" data-navigate-track />
                     <link rel="stylesheet" href="/css/fieldops-coordinate-map.css" data-navigate-track />
+                    <link rel="stylesheet" href="/css/fieldops-asset-map.css" data-navigate-track />
                     HTML),
             )
             ->renderHook(
@@ -48,6 +49,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): HtmlString => new HtmlString(<<<'HTML'
                     <script src="/vendor/leaflet/leaflet.js" data-navigate-once></script>
                     <script src="/js/fieldops-coordinate-map.js" data-navigate-once></script>
+                    <script src="/js/fieldops-asset-map.js" data-navigate-once></script>
                     HTML),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
